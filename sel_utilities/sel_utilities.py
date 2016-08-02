@@ -126,3 +126,115 @@ class RelaySEL311C:
         # Trim whitespace from RID and TID
         _strip_string('RID', met_card.data)
         _strip_string('TID', met_card.data)
+
+
+class RelaySEL421:
+    """ Class for SEL-421 relay types. """
+    def __init__(self):
+        cl = [tdc.DataCard('A40, A9, A10, A8, A12',
+                           ['RID', '   Date: ', 'DATE', '  Time: ', 'TIME'],
+                           fixed_fields=(1, 3)),
+              tdc.DataCard('A40, A18, A10',
+                           ['TID', '   Serial Number: ', 'S_N'],
+                           fixed_fields=(1,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                      Phase Currents'),
+              tdc.DataCardFixedText('                 IA        IB        IC'),
+              tdc.DataCard('A13, F10.3, F10.3, F10.3',
+                           ['I MAG (A)    ', 'IA_MAG', 'IB_MAG', 'IC_MAG'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A12, F10.2, F10.2, F10.2',
+                           ['I ANG (DEG) ', 'IA_ANG', 'IB_ANG', 'IC_ANG'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                      Phase Voltages      '
+                                    '          Phase-Phase Voltages'),
+              tdc.DataCardFixedText('                 VA        VB        VC   '
+                                    '        VAB       VBC       VCA'),
+              tdc.DataCard('A13, F10.3, F10.3, F10.3, A3, F10.3, F10.3, F10.3',
+                           ['V MAG (kV)   ', 'VA_MAG', 'VB_MAG', 'VC_MAG',
+                            '   ', 'VAB_MAG', 'VBC_MAG', 'VCA_MAG'],
+                           fixed_fields=(0, 4)),
+              tdc.DataCard('A12, F10.2, F10.2, F10.2, A3, F10.2, F10.2, F10.2',
+                           ['V ANG (DEG) ', 'VA_ANG', 'VB_ANG', 'VC_ANG',
+                            '   ', 'VAB_ANG', 'VBC_ANG', 'VCA_ANG'],
+                           fixed_fields=(0, 4)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                    Sequence Currents (A) '
+                                    '         Sequence Voltages (kV)'),
+              tdc.DataCardFixedText('                  I1        3I2       3I0 '
+                                    '        V1        3V2       3V0'),
+              tdc.DataCard('A13, F10.3, F10.3, F10.3, A2, F10.3, F10.3, F10.3',
+                           ['MAG          ', 'I1_MAG', '3I2_MAG', '3I0_MAG',
+                            '  ', 'V1_MAG', '3V2_MAG', '3V0_MAG'],
+                           fixed_fields=(0, 4)),
+              tdc.DataCard('A12, F10.2, F10.2, F10.2, A2, F10.2, F10.2, F10.2',
+                           ['ANG (DEG)   ', 'I1_ANG', '3I2_ANG', '3I0_ANG',
+                            '  ', 'V1_ANG', '3V2_ANG', '3V0_ANG'],
+                           fixed_fields=(0, 4)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                   A           B          '
+                                    ' C             3P'),
+              tdc.DataCard('A11, F12.2, F12.2, F12.2, F15.2',
+                           ['P (MW)     ', 'MW_A', 'MW_B', 'MW_C', 'MW_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, F12.2, F12.2, F12.2, F15.2',
+                           ['Q (MVAR)   ', 'MVAR_A', 'MVAR_B', 'MVAR_C',
+                            'MVAR_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, F12.2, F12.2, F12.2, F15.2',
+                           ['S (MVA)    ', 'S_A_MAG', 'S_B_MAG', 'S_C_MAG',
+                            'S_3P_MAG'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A12, F11.2, F12.2, F12.2, F15.2',
+                           ['POWER FACTOR', 'PF_A', 'PF_B', 'PF_C', 'PF_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, A12, A12, A12, A15',
+                           ['           ', 'PF_LEADLAG_A', 'PF_LEADLAG_B',
+                            'PF_LEADLAG_C', 'PF_LEADLAG_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+
+              tdc.DataCard('A12, F9.2, A14, F9.2',
+                           ['FREQ (Hz)   ', 'FREQ',
+                            '       VDC1(V)', 'VDC1'],
+                           fixed_fields=(0, 2))
+              ]
+        self.met = tdc.DataCardStack(cl,
+                                     post_read_hook=self._met_post_read_hook)
+
+    @staticmethod
+    def _met_post_read_hook(met_card):
+        #  Populate V0, I2, and I0 from 3V0, 3I2, and 3I0
+        #  This will help provide a standardized interface among different
+        #  relays that may vary in whether they provide V0 or 3V0, etc.
+        met_card.data['V2_MAG'] = met_card.data['3V2_MAG'] / 3.
+        met_card.data['V2_ANG'] = met_card.data['3V2_ANG']
+        met_card.data['V0_MAG'] = met_card.data['3V0_MAG'] / 3.
+        met_card.data['V0_ANG'] = met_card.data['3V0_ANG']
+        met_card.data['I2_MAG'] = met_card.data['3I2_MAG'] / 3.
+        met_card.data['I2_ANG'] = met_card.data['3I2_ANG']
+        met_card.data['I0_MAG'] = met_card.data['3I0_MAG'] / 3.
+        met_card.data['I0_ANG'] = met_card.data['3I0_ANG']
+
+        #  Add complex quantities to data dict. This will be a convenience for
+        #  functions that use this class as the basis for computations.
+        quantities = ['IA', 'IB', 'IC',
+                      'VA', 'VB', 'VC', 'VAB', 'VBC', 'VCA',
+                      'I1', '3I2', '3I0', 'V1', '3V2', '3V0',
+                      'V2', 'V0', 'I2', 'I0']
+
+        for q in quantities:
+            _mag_ang_to_complex(q, met_card.data)
+
+        for ph in ['A', 'B', 'C', '3P']:
+            met_card.data['S_' + ph] = complex(met_card.data['MW_' + ph],
+                                               met_card.data['MVAR_' + ph])
+
+        # Trim whitespace from lead/lag
+        for ph in ['A', 'B', 'C', '3P']:
+            _strip_string('PF_LEADLAG_' + ph, met_card.data)
+
+        # Trim whitespace from RID and TID
+        _strip_string('RID', met_card.data)
+        _strip_string('TID', met_card.data)
