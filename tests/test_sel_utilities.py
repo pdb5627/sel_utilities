@@ -161,6 +161,7 @@ def sel351delta_met_values():
             'FREQ': 60.01,
             'VDC': 133.7}
 
+
 @pytest.fixture()
 def sel421_met():
     return """BROKEN BOW 11S-08 SEL-421 NON-PILOT        Date: 07/21/2016  Time: 16:54:23.886
@@ -251,6 +252,7 @@ def sel421_met_values():
             'FREQ': 60.00,
             'VDC1': 133.67}
 
+
 def test_sel311c_parse_met(sel311c_met, sel311c_met_values):
     tc = su.RelaySEL311C().met
     assert tc.match(sel311c_met) is True
@@ -273,3 +275,7 @@ def test_sel351delta_parse_met(sel351delta_met, sel351delta_met_values):
     tc.read(sel351delta_met)
     for k, v in sel351delta_met_values.items():
         assert tc.data[k] == v
+
+#  TODO: Add tests for conversions of 3V0 to V0, etc.
+#  TODO: Add tests for polar to rectangular quantities
+#  TODO: Add tests for active/reactive power to complex power
