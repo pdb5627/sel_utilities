@@ -96,6 +96,72 @@ def sel311c_met_values():
 
 
 @pytest.fixture()
+def sel351delta_met():
+    return """BROKEN BOW 11T1L SEL-351-6        Date: 07/21/16    Time: 16:56:07.849
+BROKEN BOW PCB610 T1 11T1L
+                 A         B         C         N         G
+I MAG (A)      194.340   195.474   197.990     0.000     3.298
+I ANG (DEG)    -33.67   -153.74     85.89     83.54     79.14
+
+                 AB        BC        CA        S
+V MAG (KV)      70.965    71.441    71.101   119.363
+V ANG (DEG)      0.00   -120.23    119.55      1.45
+
+                 3P
+MW              24.089
+MVAR             1.523
+PF               0.998
+                 LAG
+
+                 I1       3I2       3I0        V1        V2
+MAG            195.933     3.736     3.298    41.062     0.184
+ANG   (DEG)    -33.84    166.83     79.14    -30.22    149.29
+
+FREQ (Hz)      60.01                VDC (V)      133.7""".split('\n')
+
+
+@pytest.fixture()
+def sel351delta_met_values():
+    return {'RID': 'BROKEN BOW 11T1L SEL-351-6',
+            'TID': 'BROKEN BOW PCB610 T1 11T1L',
+            'DATE': '07/21/16',
+            'TIME': '16:56:07.849',
+            'IA_MAG': 194.340,
+            'IB_MAG': 195.474,
+            'IC_MAG': 197.990,
+            'IN_MAG': 0.000,
+            'IG_MAG': 3.298,
+            'IA_ANG': -33.67,
+            'IB_ANG': -153.74,
+            'IC_ANG': 85.89,
+            'IN_ANG': 83.54,
+            'IG_ANG': 79.14,
+            'VAB_MAG': 70.965,
+            'VBC_MAG': 71.441,
+            'VCA_MAG': 71.101,
+            'VS_MAG': 119.363,
+            'VAB_ANG': 0.00,
+            'VBC_ANG': -120.23,
+            'VCA_ANG': 119.55,
+            'VS_ANG': 1.45,
+            'MW_3P': 24.089,
+            'MVAR_3P': 1.523,
+            'PF_3P': 0.998,
+            'PF_LEADLAG_3P': 'LAG',
+            'I1_MAG': 195.933,
+            '3I2_MAG': 3.736,
+            '3I0_MAG': 3.298,
+            'V1_MAG': 41.062,
+            'V2_MAG': 0.184,
+            'I1_ANG': -33.84,
+            '3I2_ANG': 166.83,
+            '3I0_ANG': 79.14,
+            'V1_ANG': -30.22,
+            'V2_ANG': 149.29,
+            'FREQ': 60.01,
+            'VDC': 133.7}
+
+@pytest.fixture()
 def sel421_met():
     return """BROKEN BOW 11S-08 SEL-421 NON-PILOT        Date: 07/21/2016  Time: 16:54:23.886
 L1074 BROKEN BOW-CROOKED CREEK             Serial Number: 1111780371
@@ -195,7 +261,15 @@ def test_sel311c_parse_met(sel311c_met, sel311c_met_values):
 
 def test_sel421_parse_met(sel421_met, sel421_met_values):
     tc = su.RelaySEL421().met
-    #assert tc.match(sel421_met) is True
+    assert tc.match(sel421_met) is True
     tc.read(sel421_met)
     for k, v in sel421_met_values.items():
+        assert tc.data[k] == v
+
+
+def test_sel351delta_parse_met(sel351delta_met, sel351delta_met_values):
+    tc = su.RelaySEL351Delta().met
+    assert tc.match(sel351delta_met) is True
+    tc.read(sel351delta_met)
+    for k, v in sel351delta_met_values.items():
         assert tc.data[k] == v

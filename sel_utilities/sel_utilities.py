@@ -128,6 +128,99 @@ class RelaySEL311C:
         _strip_string('TID', met_card.data)
 
 
+class RelaySEL351Delta:
+    """ Class for SEL-351 relay type with delta PTs. """
+    def __init__(self):
+        cl = [tdc.DataCard('A30, A10, A8, A10, A12',
+                           ['RID', '    Date: ', 'DATE', '    Time: ', 'TIME'],
+                           fixed_fields=(1, 3)),
+              tdc.DataCard('A30',
+                           ['TID']),
+              tdc.DataCardFixedText('                 A         B         C   '
+                                    '      N         G'),
+              tdc.DataCard('A12, F10.3, F10.3, F10.3, F10.3, F10.3',
+                           ['I MAG (A)   ', 'IA_MAG', 'IB_MAG', 'IC_MAG',
+                            'IN_MAG', 'IG_MAG'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, F10.2, F10.2, F10.2, F10.2, F10.2',
+                           ['I ANG (DEG)', 'IA_ANG', 'IB_ANG', 'IC_ANG',
+                            'IN_ANG', 'IG_ANG'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                 AB        BC        CA   '
+                                    '     S'),
+              tdc.DataCard('A12, F10.3, F10.3, F10.3, F10.3',
+                           ['V MAG (KV)  ', 'VAB_MAG', 'VBC_MAG', 'VCA_MAG',
+                            'VS_MAG'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, F10.2, F10.2, F10.2, F10.2',
+                           ['V ANG (DEG)', 'VAB_ANG', 'VBC_ANG', 'VCA_ANG',
+                            'VS_ANG'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                 3P'),
+              tdc.DataCard('A12, F10.3',
+                           ['MW          ', 'MW_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A12, F10.3',
+                           ['MVAR        ', 'MVAR_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A12, F10.3',
+                           ['PF          ', 'PF_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A12, A10',
+                           ['            ', 'PF_LEADLAG_3P'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCardFixedText('                 I1       3I2       3I0  '
+                                    '      V1        V2'),
+              tdc.DataCard('A12, F10.3, F10.3, F10.3, F10.3, F10.3',
+                           ['MAG         ', 'I1_MAG', '3I2_MAG', '3I0_MAG',
+                            'V1_MAG', 'V2_MAG'],
+                           fixed_fields=(0,)),
+              tdc.DataCard('A11, F10.2, F10.2, F10.2, F10.2, F10.2, F10.2',
+                           ['ANG   (DEG)', 'I1_ANG', '3I2_ANG', '3I0_ANG',
+                            'V1_ANG', 'V2_ANG', '3V0_ANG'],
+                           fixed_fields=(0,)),
+              tdc.DataCardFixedText(''),
+              tdc.DataCard('A12, F8.2, A24, F10.1',
+                           ['FREQ (Hz)   ', 'FREQ',
+                            '                VDC (V) ', 'VDC'],
+                           fixed_fields=(0, 2))
+              ]
+        self.met = tdc.DataCardStack(cl,
+                                     post_read_hook=self._met_post_read_hook)
+
+    @staticmethod
+    def _met_post_read_hook(met_card):
+        #  Populate V0, I2, and I0 from 3V0, 3I2, and 3I0
+        #  This will help provide a standardized interface among different
+        #  relays that may vary in whether they provide V0 or 3V0, etc.
+        met_card.data['I2_MAG'] = met_card.data['3I2_MAG'] / 3.
+        met_card.data['I2_ANG'] = met_card.data['3I2_ANG']
+        met_card.data['I0_MAG'] = met_card.data['3I0_MAG'] / 3.
+        met_card.data['I0_ANG'] = met_card.data['3I0_ANG']
+
+        #  Add complex quantities to data dict. This will be a convenience for
+        #  functions that use this class as the basis for computations.
+        quantities = ['IA', 'IB', 'IC', 'IN', 'IG',
+                      'VAB', 'VBC', 'VCA', 'VS',
+                      'V1', 'V2', 'I1', '3I2', '3I0',
+                      'I2', 'I0']
+
+        for q in quantities:
+            _mag_ang_to_complex(q, met_card.data)
+
+        met_card.data['S_3P'] = complex(met_card.data['MW_3P'],
+                                        met_card.data['MVAR_3P'])
+
+        # Trim whitespace from lead/lag
+        _strip_string('PF_LEADLAG_3P', met_card.data)
+
+        # Trim whitespace from RID and TID
+        _strip_string('RID', met_card.data)
+        _strip_string('TID', met_card.data)
+
 class RelaySEL421:
     """ Class for SEL-421 relay types. """
     def __init__(self):
